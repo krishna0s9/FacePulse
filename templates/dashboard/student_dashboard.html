@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<h2>Welcome, {{ student.user.get_full_name|default:student.user.username }}</h2>
+<p>Class: {% if student.student_class %}{{ student.student_class.name }}{% else %}No class assigned{% endif %}</p>
+
+<section>
+    <h3>Attendance Summary</h3>
+    <ul>
+        <li>Total days: {{ total_days }}</li>
+        <li>Present: {{ present_count }}</li>
+        <li>Absent: {{ absent_count }}</li>
+        <li>Percentage: {{ percentage }}%</li>
+    </ul>
+    <hr>
+    <h3>Recent Attendance</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Class</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in my_attendance %}
+            <tr>
+                <td>{{ a.date }}</td>
+                <td>{{ a.student_class.name }}</td>
+                <td>{{ a.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No attendance records yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% endblock %}

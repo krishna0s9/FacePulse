@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h2>Admin Dashboard</h2>
+
+<section>
+    <h3>Face Recognition Attendance</h3>
+    <div class="attendance-actions">
+        <a href="{% url 'take_attendance' %}" class="btn btn-primary">Take Attendance with Camera</a>
+        <p class="help-text">Click to open the face recognition system</p>
+    </div>
+</section>
+
+<section>
+    <h3>Recent Attendance</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in attendance_records %}
+            <tr>
+                <td>{{ a.date }}</td>
+                <td>{{ a.student.user.get_full_name|default:a.student.user.username }}</td>
+                <td>{{ a.student_class.name }}</td>
+                <td>{{ a.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No attendance records.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<style>
+    .attendance-actions {
+        text-align: center;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .btn:hover {
+        background-color: #0056b3;
+        color: white;
+        text-decoration: none;
+    }
+
+    .help-text {
+        color: #666;
+        font-style: italic;
+        margin: 0;
+    }
+
+    section {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th,
+    td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+{% endblock %}

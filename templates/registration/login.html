@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 8vh auto;
+            background: #fff;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 22px;
+        }
+
+        form p {
+            margin: 0 0 12px;
+        }
+
+        .errorlist {
+            color: #b00020;
+            margin: 0 0 12px;
+            list-style: none;
+            padding: 0;
+        }
+
+        button {
+            background: #2563eb;
+            color: #fff;
+            border: 0;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1e4fd9;
+        }
+
+        .help {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+    </style>
+    {% load static %}
+    {% csrf_token %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+            {% endfor %}
+    </ul>
+    {% endif %}
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>Sign in</h1>
+        <form method="post" action="">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.as_p }}
+            <button type="submit">Login</button>
+        </form>
+        <p class="help">You will be redirected to your dashboard after login.</p>
+    </div>
+</body>
+
+</html>

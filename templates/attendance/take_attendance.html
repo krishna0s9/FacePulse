@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Take Attendance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Face Recognition Attendance System</h2>
+
+    <div class="attendance-controls">
+        <button id="startBtn" class="btn btn-primary">Start Camera</button>
+        <button id="stopBtn" class="btn btn-danger" disabled>Stop Camera</button>
+        <button id="statusBtn" class="btn btn-info">Check Status</button>
+    </div>
+
+    <div class="video-container">
+        <img id="videoStream" src="" alt="Video Stream" style="display: none; max-width: 100%; height: auto;">
+        <div id="noVideo" class="no-video">
+            <p>Click "Start Camera" to begin face recognition</p>
+        </div>
+    </div>
+
+    <div class="attendance-status">
+        <h3>Attendance Status</h3>
+        <div id="statusInfo">
+            <p>Marked: <span id="markedCount">0</span></p>
+            <p>Total Students: <span id="totalCount">0</span></p>
+            <div id="markedStudents"></div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ul>
+            <li>Click "Start Camera" to begin face recognition</li>
+            <li>Look at the camera - your face will be detected automatically</li>
+            <li>Recognized students will be marked as "Present"</li>
+            <li>Click "Stop Camera" when finished</li>
+            <li>Press 'q' on keyboard to quit (if supported)</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .attendance-controls {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .video-container {
+        text-align: center;
+        margin-bottom: 20px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+
+    .no-video {
+        padding: 40px;
+        color: #666;
+    }
+
+    .attendance-status {
+        background-color: #e9ecef;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .instructions {
+        background-color: #d1ecf1;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #17a2b8;
+    }
+
+    .instructions ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+
+    .instructions li {
+        margin: 5px 0;
+    }
+
+    #markedStudents {
+        margin-top: 10px;
+    }
+
+    .student-item {
+        background-color: #d4edda;
+        padding: 5px 10px;
+        margin: 2px 0;
+        border-radius: 3px;
+        display: inline-block;
+        margin-right: 5px;
+    }
+</style>
+
+<script>
+    let isStreaming = false;
+    let statusInterval;
+
+    document.getElementById('startBtn').addEventListener('click', function () {
+        if (!isStreaming) {
+            startVideoStream();
+        }
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', function () {
+        stopVideoStream();
+    });
+
+    document.getElementById('statusBtn').addEventListener('click', function () {
+        checkAttendanceStatus();
+    });
+
+    function startVideoStream() {
+        const videoElement = document.getElementById('videoStream');
+        const noVideoElement = document.getElementById('noVideo');
+
+        videoElement.src = '{% url "video_feed" %}';
+        videoElement.style.display = 'block';
+        noVideoElement.style.display = 'none';
+
+        isStreaming = true;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+
+        // Start checking status every 2 seconds
+        statusInterval = setInterval(checkAttendanceStatus, 2000);
+
+        // Check initial status
+        checkAttendanceStatus();
+    }
+
+    function stopVideoStream() {
+        const videoElement = document.getElementById('videoStream');
+        const noVideoElement = document.getElementById('noVideo');
+
+        // Stop the video stream
+        fetch('{% url "stop_camera" %}')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Camera stopped:', data);
+            })
+            .catch(error => {
+                console.error('Error stopping camera:', error);
+            });
+
+        videoElement.style.display = 'none';
+        noVideoElement.style.display = 'block';
+
+        isStreaming = false;
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+
+        // Stop status checking
+        if (statusInterval) {
+            clearInterval(statusInterval);
+        }
+
+        // Show completion message
+        showCompletionMessage();
+    }
+
+    function checkAttendanceStatus() {
+        fetch('{% url "attendance_status" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('markedCount').textContent = data.marked_count;
+                    document.getElementById('totalCount').textContent = data.total_students;
+
+                    // Update marked students list
+                    const markedStudentsDiv = document.getElementById('markedStudents');
+                    if (data.marked_students && data.marked_students.length > 0) {
+                        markedStudentsDiv.innerHTML = '<strong>Marked Students:</strong><br>' +
+                            data.marked_students.map(rollNo =>
+                                `<span class="student-item">${rollNo}</span>`
+                            ).join('');
+                    } else {
+                        markedStudentsDiv.innerHTML = '<em>No students marked yet</em>';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+            });
+    }
+
+    function showCompletionMessage() {
+        const statusDiv = document.getElementById('statusInfo');
+        const completionMsg = document.createElement('div');
+        completionMsg.innerHTML = '<h4 style="color: green;">✓ Attendance Completed Successfully!</h4>';
+        completionMsg.style.marginTop = '20px';
+        completionMsg.style.padding = '15px';
+        completionMsg.style.backgroundColor = '#d4edda';
+        completionMsg.style.borderRadius = '5px';
+        completionMsg.style.border = '1px solid #c3e6cb';
+
+        statusDiv.appendChild(completionMsg);
+    }
+
+    // Handle keyboard events
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'q' || event.key === 'Q') {
+            if (isStreaming) {
+                stopVideoStream();
+            }
+        }
+    });
+
+    // Clean up when page is unloaded
+    window.addEventListener('beforeunload', function () {
+        if (isStreaming) {
+            fetch('{% url "stop_camera" %}');
+        }
+    });
+</script>
+{% endblock %}
