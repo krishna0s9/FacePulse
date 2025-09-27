@@ -14,37 +14,23 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# facepulse/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
-from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-from . import views  # dashboard_view
-from faculty import views as faculty_views  # admin and student dashboards
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view(
-        template_name='registration/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
-    # Root path → redirect to role-based dashboard
-    path('', RedirectView.as_view(pattern_name='dashboard', permanent=False)),
-
-    # Role-based redirect after login
-    path('redirect/', views.role_based_redirect, name='role_based_redirect'),
-
-    # Main dashboard redirect based on role
-    path('dashboard/', views.dashboard_view, name='dashboard'),
-    path('dashboard/student/', faculty_views.student_dashboard,
-         name='student_dashboard'),
-    path('dashboard/admin/', faculty_views.admin_dashboard, name='admin_dashboard'),
-
-    # Attendance URLs
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
+    path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
+    path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
     path('attendance/', include('attendance.urls')),
+    path('', views.home, name='home'),
 ]
 
-# Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,
                           document_root=settings.MEDIA_ROOT)

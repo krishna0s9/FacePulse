@@ -1,7 +1,40 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Dashboard</h2>
-<p>Welcome, {{ user.username }}</p>
-<a href="{% url 'logout' %}">Logout</a>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong>!</p>
+
+                    <div class="row mt-4">
+                        {% if user.is_staff %}
+                        <div class="col-md-6 mb-3">
+                            <a href="/dashboard/admin/" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-cog me-2"></i>Admin Dashboard
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <div class="col-md-6 mb-3">
+                            <a href="/dashboard/student/" class="btn btn-info btn-lg w-100">
+                                <i class="fas fa-user-graduate me-2"></i>Student Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/accounts/logout/" class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,107 +1,239 @@
-{% extends 'base.html' %}
+{{% extends 'base.html' %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard - FacePulse{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="/dashboard/admin/">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/attendance/take/">
+                    <i class="fas fa-camera me-2"></i>Take Attendance
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/">
+                    <i class="fas fa-cog me-2"></i>System Admin
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="generateReport()">
+                    <i class="fas fa-chart-bar me-2"></i>Reports
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<h2>Admin Dashboard</h2>
+<div class="page-header">
+    <h1 class="h2">
+        <i class="fas fa-tachometer-alt me-3"></i>Admin Dashboard
+        <small class="text-muted">Welcome, {{ user.get_full_name|default:user.username }}</small>
+    </h1>
+</div>
 
-<section>
-    <h3>Face Recognition Attendance</h3>
-    <div class="attendance-actions">
-        <a href="{% url 'take_attendance' %}" class="btn btn-primary">Take Attendance with Camera</a>
-        <p class="help-text">Click to open the face recognition system</p>
+{% if not error %}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card present">
+            <i class="fas fa-users fa-2x mb-2"></i>
+            <h3>{{ total_students|default:0 }}</h3>
+            <p class="mb-0">Total Students</p>
+        </div>
     </div>
-</section>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card percentage">
+            <i class="fas fa-check-circle fa-2x mb-2"></i>
+            <h3>{{ present_today|default:0 }}</h3>
+            <p class="mb-0">Present Today</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card absent">
+            <i class="fas fa-times-circle fa-2x mb-2"></i>
+            <h3>{{ absent_today|default:0 }}</h3>
+            <p class="mb-0">Absent Today</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card present">
+            <i class="fas fa-percentage fa-2x mb-2"></i>
+            <h3>{{ attendance_percentage|default:0 }}%</h3>
+            <p class="mb-0">Today's Rate</p>
+        </div>
+    </div>
+</div>
 
-<section>
-    <h3>Recent Attendance</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Student</th>
-                <th>Class</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for a in attendance_records %}
-            <tr>
-                <td>{{ a.date }}</td>
-                <td>{{ a.student.user.get_full_name|default:a.student.user.username }}</td>
-                <td>{{ a.student_class.name }}</td>
-                <td>{{ a.get_status_display }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4">No attendance records.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</section>
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a href="/attendance/take/" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-camera me-2"></i>Take Attendance with Camera
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-success btn-lg w-100" onclick="loadEncodings()">
+                            <i class="fas fa-sync-alt me-2"></i>Reload Face Encodings
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a href="/admin/attendance/student/" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-user-graduate me-2"></i>Manage Students
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="/admin/attendance/attendance/" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-list me-2"></i>View All Records
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<style>
-    .attendance-actions {
-        text-align: center;
-        padding: 20px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        margin-bottom: 20px;
+<!-- Recent Attendance -->
+<div class="row">
+    <div class="col-12">
+        <div class="card attendance-table">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Recent Attendance Records
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_attendance %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Roll No</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in recent_attendance %}
+                            <tr>
+                                <td>
+                                    <strong>{{ record.student.name }}</strong>
+                                </td>
+                                <td>
+                                    <code>{{ record.student.roll_no }}</code>
+                                </td>
+                                <td>
+                                    {{ record.date|date:"M d, Y" }}
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ record.status }}">
+                                        {% if record.status == 'present' %}
+                                        <i class="fas fa-check me-1"></i>
+                                        {% elif record.status == 'absent' %}
+                                        <i class="fas fa-times me-1"></i>
+                                        {% else %}
+                                        <i class="fas fa-clock me-1"></i>
+                                        {% endif %}
+                                        {{ record.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ record.marked_at|time:"H:i:s" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if record.confidence %}
+                                    <span class="badge bg-info">
+                                        {{ record.confidence|floatformat:2 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No attendance records found</h5>
+                    <p class="text-muted">Start taking attendance to see records here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Error State -->
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Error loading dashboard data.</strong> Please try refreshing the page or contact support.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function loadEncodings() {
+        if (confirm('This will reload all face encodings. This may take a few minutes. Continue?')) {
+            const btn = event.target;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+            btn.disabled = true;
+
+            fetch('/attendance/load-encodings/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Face encodings reloaded successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error loading encodings: ' + error);
+                })
+                .finally(() => {
+                    btn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Reload Face Encodings';
+                    btn.disabled = false;
+                });
+        }
     }
 
-    .btn {
-        display: inline-block;
-        padding: 12px 24px;
-        background-color: #007bff;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        margin-bottom: 10px;
+    function generateReport() {
+        alert('Report generation feature coming soon!');
     }
-
-    .btn:hover {
-        background-color: #0056b3;
-        color: white;
-        text-decoration: none;
-    }
-
-    .help-text {
-        color: #666;
-        font-style: italic;
-        margin: 0;
-    }
-
-    section {
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: white;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-
-    th,
-    td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-
-    th {
-        background-color: #f8f9fa;
-        font-weight: bold;
-    }
-
-    tr:hover {
-        background-color: #f5f5f5;
-    }
-</style>
-
+</script>
 {% endblock %}
